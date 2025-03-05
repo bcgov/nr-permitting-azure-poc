@@ -6,13 +6,13 @@ variable "resource_group_location" {
 
 variable "resource_group_name" {
   type        = string
-  default     = "rg-integrationhub"
+  default     = "b9cee3-test-networking"
   description = "Name of the resource group."
 }
 
 variable "vnet_name" {
   type        = string
-  default     = "integrationvnet"
+  default     = "b9cee3-test-vwan-spoke"
   description = "Existing vnet name."
 }
 
