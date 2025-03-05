@@ -15,7 +15,7 @@ export async function serviceBusQueueTrigger(message: unknown, context: Invocati
 
 app.serviceBusQueue('serviceBusQueueTrigger', {
     connection: 'ServiceBusConnection',
-    queueName: 'tfex-servicebus-queue',
+    queueName: 'inbound',
     return: output.cosmosDB({
         databaseName: 'Database',
         containerName: 'Container',

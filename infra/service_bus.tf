@@ -1,7 +1,7 @@
 resource "azurerm_servicebus_namespace" "servicebus_namespace" {
-  name                = "tfex-servicebus-namespace-${random_string.azurerm_api_management_name.result}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.serviceBusNamespaces}${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   sku                 = "Premium"
   capacity = 1
   premium_messaging_partitions = 1
@@ -14,14 +14,14 @@ resource "azurerm_servicebus_namespace" "servicebus_namespace" {
 }
 
 resource "azurerm_servicebus_queue" "servicebus_queue" {
-  name         = "tfex-servicebus-queue"
+  name                = "${local.abbrs.serviceBusNamespacesQueues}inbound-${random_id.random_deployment_suffix.hex}"
   namespace_id = azurerm_servicebus_namespace.servicebus_namespace.id
 }
 
 resource "azurerm_private_endpoint" "servicebus_private_endpoint" {
-  name                = "servicebus_private_endpoint"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.privateEndpoint}${local.abbrs.serviceBusNamespaces}${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   subnet_id           = azurerm_subnet.privateEndpoint.id
   private_service_connection {
     name                           = "servicebus_privateserviceconnection"

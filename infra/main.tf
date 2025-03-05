@@ -1,20 +1,16 @@
+locals {
+  # get json 
+  abbrs = jsondecode(file("${path.module}/abbreviations.json"))
+}
+
+resource "random_id" "random_deployment_suffix" {
+  byte_length = 4
+}
+
 data "azurerm_subscription" "current" {}
 
-resource "random_pet" "rg_name" {
-  prefix = var.resource_group_name_prefix
-}
-
-resource "azurerm_resource_group" "rg" {
-  name     = random_pet.rg_name.id
-  location = var.resource_group_location
-}
-
-resource "random_string" "azurerm_api_management_name" {
-  length  = 13
-  lower   = true
-  numeric = false
-  special = false
-  upper   = false
+data "azurerm_resource_group" "rg" {
+  name = var.resource_group_name
 }
 
 resource "azurerm_role_assignment" "apim_servicebus_data_sender" {
@@ -28,7 +24,6 @@ resource "azurerm_role_assignment" "function_app_storage_blob_data_owner" {
   role_definition_name = "Storage Blob Data Owner"
   principal_id         = azurerm_linux_function_app.function_app.identity[0].principal_id
 }
-
 
 resource "azurerm_role_assignment" "function_app_servicebus_queue_data_receiver" {
   scope                = azurerm_servicebus_queue.servicebus_queue.id
@@ -65,17 +60,17 @@ resource "azurerm_container_registry_task_schedule_run_now" "example" {
 az acr build --registry $ACR_NAME --image helloacrtasks:v1 --file /path/to/Dockerfile /path/to/build/context. */
 
 resource "azurerm_application_insights" "app_insights" {
-  name                = "tfex-app-insights-${random_string.azurerm_api_management_name.result}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.insightsComponents}${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   application_type    = "web"
-  workspace_id = azurerm_log_analytics_workspace.example.id
+  workspace_id        = azurerm_log_analytics_workspace.example.id
 }
 
 resource "azurerm_monitor_diagnostic_setting" "function_app_diagnostics" {
-  name               = "function_app_diagnostics"
-  target_resource_id = azurerm_linux_function_app.function_app.id
-log_analytics_workspace_id = azurerm_log_analytics_workspace.example.id
+  name                       = "function_app_diagnostics"
+  target_resource_id         = azurerm_linux_function_app.function_app.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.example.id
 
   enabled_log {
     category = "FunctionAppLogs"
@@ -87,8 +82,8 @@ log_analytics_workspace_id = azurerm_log_analytics_workspace.example.id
 }
 
 resource "azurerm_log_analytics_workspace" "example" {
-  name                = "example-logs-${random_string.azurerm_api_management_name.result}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.operationalInsightsWorkspaces}${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   sku                 = "PerGB2018"
 }

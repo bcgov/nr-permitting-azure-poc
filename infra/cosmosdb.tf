@@ -1,7 +1,7 @@
 resource "azurerm_cosmosdb_account" "cosmosdb_sql" {
-  name                = "tfex-cosmos-sql-${random_string.azurerm_api_management_name.result}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.documentDBDatabaseAccounts}${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   offer_type          = "Standard"
   kind                = "GlobalDocumentDB"
 
@@ -16,16 +16,16 @@ resource "azurerm_cosmosdb_account" "cosmosdb_sql" {
 }
 
 resource "azurerm_cosmosdb_sql_database" "cosmosdb_sql_db" {
-  name                = "tfex-cosmos-sql-db-${random_string.azurerm_api_management_name.result}"
+  name                = "${local.abbrs.documentDBDatabaseAccounts}database-${random_id.random_deployment_suffix.hex}"
   account_name        = azurerm_cosmosdb_account.cosmosdb_sql.name
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
   throughput          = 400
 }
 
 resource "azurerm_private_endpoint" "cosmosdb_sql_db_private_endpoint" {
-  name                = "cosmosdb_sql_db_private_endpoint"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.privateEndpoint}${local.abbrs.documentDBDatabaseAccounts}${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   subnet_id           = azurerm_subnet.privateEndpoint.id
   private_service_connection {
     name                           = "cosmosdb_sql_db_privateserviceconnection"
@@ -37,7 +37,7 @@ resource "azurerm_private_endpoint" "cosmosdb_sql_db_private_endpoint" {
 
 resource "azurerm_cosmosdb_sql_role_definition" "cosmosdb_sql_role_definition" {
   name                = "examplesqlroledef"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
   account_name        = azurerm_cosmosdb_account.cosmosdb_sql.name
   type                = "CustomRole"
   assignable_scopes   = ["${azurerm_cosmosdb_account.cosmosdb_sql.id}/dbs/${azurerm_cosmosdb_sql_database.cosmosdb_sql_db.name}"]
@@ -48,7 +48,7 @@ resource "azurerm_cosmosdb_sql_role_definition" "cosmosdb_sql_role_definition" {
 }
 
 resource "azurerm_cosmosdb_sql_role_assignment" "example" {
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
   account_name        = azurerm_cosmosdb_account.cosmosdb_sql.name
   role_definition_id  = azurerm_cosmosdb_sql_role_definition.cosmosdb_sql_role_definition.id
   principal_id        = azurerm_linux_function_app.function_app.identity[0].principal_id

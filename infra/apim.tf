@@ -1,7 +1,7 @@
 resource "azurerm_api_management" "apim" {
-  name                = "apiservice${random_string.azurerm_api_management_name.result}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.apiManagementService}${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
   virtual_network_type = var.apim_virtual_network_type
   virtual_network_configuration {
     subnet_id = azurerm_subnet.apim.id
@@ -12,12 +12,13 @@ resource "azurerm_api_management" "apim" {
   identity {
     type = "SystemAssigned"
   }
+  depends_on = [ azurerm_subnet_network_security_group_association.apim_nsg_association ]
 }
 
 resource "azurerm_api_management_logger" "apim_logger" {
   name                = "apimlogger"
   api_management_name = azurerm_api_management.apim.name
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   application_insights {
     instrumentation_key = azurerm_application_insights.app_insights.instrumentation_key
@@ -26,7 +27,7 @@ resource "azurerm_api_management_logger" "apim_logger" {
 
 resource "azurerm_api_management_api" "service_bus_api" {
   name                  = "service-bus-operations"
-  resource_group_name   = azurerm_resource_group.rg.name
+  resource_group_name   = data.azurerm_resource_group.rg.name
   api_management_name   = azurerm_api_management.apim.name
   display_name          = "Service Bus Operations"
   path                  = "sb-operations"
@@ -38,7 +39,7 @@ resource "azurerm_api_management_api" "service_bus_api" {
 resource "azurerm_api_management_api_operation" "send_message" {
   operation_id        = "send-message"
   api_name            = azurerm_api_management_api.service_bus_api.name
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
   api_management_name = azurerm_api_management.apim.name
   display_name        = "Send Message"
   method              = "POST"
@@ -53,7 +54,7 @@ resource "azurerm_api_management_api_operation" "send_message" {
 
 resource "azurerm_api_management_api_operation_policy" "send_message_policy" {
   api_name            = azurerm_api_management_api.service_bus_api.name
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
   api_management_name = azurerm_api_management.apim.name
   operation_id        = azurerm_api_management_api_operation.send_message.operation_id
 

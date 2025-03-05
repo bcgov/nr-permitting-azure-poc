@@ -1,11 +1,11 @@
 data "azurerm_virtual_network" "vnet" {
   name                = "${var.vnet_name}"
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
 resource "azurerm_subnet" "apim" {
-  name                 = "apim-subnet"
-  resource_group_name  = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.networkVirtualNetworksSubnets}apim-${random_id.random_deployment_suffix.hex}"
+  resource_group_name  = data.azurerm_resource_group.rg.name
   virtual_network_name = data.azurerm_virtual_network.vnet.name
   address_prefixes     = ["${var.apim_subnet_prefix}"]
 }
@@ -15,9 +15,19 @@ resource "azurerm_subnet_network_security_group_association" "apim_nsg_associati
   network_security_group_id = azurerm_network_security_group.apim_nsg.id
 }
 
+resource "azurerm_subnet_network_security_group_association" "functions_nsg_association" {
+  subnet_id                 = azurerm_subnet.functions.id
+  network_security_group_id = azurerm_network_security_group.functions_nsg.id
+  }
+
+resource "azurerm_subnet_network_security_group_association" "privateendpoints_nsg_association" {
+  subnet_id                 = azurerm_subnet.privateEndpoint.id
+  network_security_group_id = azurerm_network_security_group.privateendpoints_nsg.id
+}
+
 resource "azurerm_subnet" "functions" {
-  name                 = "functions-subnet"
-  resource_group_name  = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.networkVirtualNetworksSubnets}functions-${random_id.random_deployment_suffix.hex}"
+  resource_group_name  = data.azurerm_resource_group.rg.name
   virtual_network_name = data.azurerm_virtual_network.vnet.name
   address_prefixes     = ["${var.functions_subnet_prefix}"]
   delegation {
@@ -30,16 +40,16 @@ resource "azurerm_subnet" "functions" {
 }
 
 resource "azurerm_subnet" "privateEndpoint" {
-  name                 = "privateendpoint-subnet"
-  resource_group_name  = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.networkVirtualNetworksSubnets}privateendpoints-${random_id.random_deployment_suffix.hex}"
+  resource_group_name  = data.azurerm_resource_group.rg.name
   virtual_network_name = data.azurerm_virtual_network.vnet.name
   address_prefixes     = ["${var.privateendpoint_subnet_prefix}"]
 }
 
 resource "azurerm_network_security_group" "apim_nsg" {
-  name                = "apim-nsg"
-    location            = azurerm_resource_group.rg.location
-    resource_group_name = azurerm_resource_group.rg.name
+  name                = "${local.abbrs.networkNetworkSecurityGroups}apim-${random_id.random_deployment_suffix.hex}"
+    location            = data.azurerm_resource_group.rg.location
+    resource_group_name = data.azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "Client_communication_to_API_Management"
@@ -248,4 +258,16 @@ resource "azurerm_network_security_group" "apim_nsg" {
     source_address_prefix      = "VirtualNetwork"
     destination_address_prefix = "Internet"
   }
+}
+
+resource "azurerm_network_security_group" "functions_nsg" {
+  name                = "${local.abbrs.networkNetworkSecurityGroups}functions-${random_id.random_deployment_suffix.hex}"
+    location            = data.azurerm_resource_group.rg.location
+    resource_group_name = data.azurerm_resource_group.rg.name
+}
+
+resource "azurerm_network_security_group" "privateendpoints_nsg" {
+  name                = "${local.abbrs.networkNetworkSecurityGroups}privateendpoints-${random_id.random_deployment_suffix.hex}"
+    location            = data.azurerm_resource_group.rg.location
+    resource_group_name = data.azurerm_resource_group.rg.name
 }
