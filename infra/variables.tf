@@ -10,6 +10,40 @@ variable "resource_group_name_prefix" {
   description = "Prefix of the resource group name that's combined with a random ID so name is unique in your Azure subscription."
 }
 
+variable "vnet_name" {
+  type        = string
+  default     = "integrationvnet"
+  description = "Existing vnet name."
+}
+
+variable "apim_subnet_prefix" {
+  type        = string
+  default     = "10.46.8.0/26"
+  description = "The address prefix for the API Management subnet."
+}
+
+variable "functions_subnet_prefix" {
+  type        = string
+  default     = "10.46.8.64/26"
+  description = "The address prefix for the Functions subnet."
+}
+
+variable "privateendpoint_subnet_prefix" {
+  type        = string
+  default     = "10.46.8.128/26"
+  description = "The address prefix for the Private Endpoint subnet."
+}
+
+variable "apim_virtual_network_type" {
+  description = "The virtual network type of the API Management service"
+  default     = "External"
+  type        = string
+  validation {
+    condition     = contains(["External", "Internal", "None"], var.apim_virtual_network_type)
+    error_message = "The virtual network type must be one of the following: External, Internal, None."
+  }
+}
+
 variable "publisher_email" {
   default     = "test@contoso.com"
   description = "The email address of the owner of the service"
