@@ -1,55 +1,80 @@
 data "azurerm_virtual_network" "vnet" {
-  name                = "${var.vnet_name}"
+  name                = var.vnet_name
   resource_group_name = data.azurerm_resource_group.rg.name
 }
 
-resource "azurerm_subnet" "apim" {
-  name                = "${local.abbrs.networkVirtualNetworksSubnets}apim-${random_id.random_deployment_suffix.hex}"
-  resource_group_name  = data.azurerm_resource_group.rg.name
-  virtual_network_name = data.azurerm_virtual_network.vnet.name
-  address_prefixes     = ["${var.apim_subnet_prefix}"]
-}
+resource "azapi_resource" "apim_subnet" {
+  type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
+  name      = "${local.abbrs.networkVirtualNetworksSubnets}apim-${random_id.random_deployment_suffix.hex}"
+  parent_id = data.azurerm_virtual_network.vnet.id
 
-resource "azurerm_subnet_network_security_group_association" "apim_nsg_association" {
-  subnet_id                 = azurerm_subnet.apim.id
-  network_security_group_id = azurerm_network_security_group.apim_nsg.id
-}
+  body = {
+    properties = {
 
-resource "azurerm_subnet_network_security_group_association" "functions_nsg_association" {
-  subnet_id                 = azurerm_subnet.functions.id
-  network_security_group_id = azurerm_network_security_group.functions_nsg.id
-  }
+      # List of address prefixes in subnet
+      addressPrefixes = ["${var.apim_subnet_prefix}"]
 
-resource "azurerm_subnet_network_security_group_association" "privateendpoints_nsg_association" {
-  subnet_id                 = azurerm_subnet.privateEndpoint.id
-  network_security_group_id = azurerm_network_security_group.privateendpoints_nsg.id
-}
-
-resource "azurerm_subnet" "functions" {
-  name                = "${local.abbrs.networkVirtualNetworksSubnets}functions-${random_id.random_deployment_suffix.hex}"
-  resource_group_name  = data.azurerm_resource_group.rg.name
-  virtual_network_name = data.azurerm_virtual_network.vnet.name
-  address_prefixes     = ["${var.functions_subnet_prefix}"]
-  delegation {
-    name = "functionsDelegation"
-    service_delegation {
-      name    = "Microsoft.Web/serverFarms"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+      # Attach to NSG
+      networkSecurityGroup = {
+        id = azurerm_network_security_group.apim_nsg.id
+      }
     }
   }
 }
 
-resource "azurerm_subnet" "privateEndpoint" {
-  name                = "${local.abbrs.networkVirtualNetworksSubnets}privateendpoints-${random_id.random_deployment_suffix.hex}"
-  resource_group_name  = data.azurerm_resource_group.rg.name
-  virtual_network_name = data.azurerm_virtual_network.vnet.name
-  address_prefixes     = ["${var.privateendpoint_subnet_prefix}"]
+resource "azapi_resource" "functions_subnet" {
+  type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
+  name      = "${local.abbrs.networkVirtualNetworksSubnets}functions-${random_id.random_deployment_suffix.hex}"
+  parent_id = data.azurerm_virtual_network.vnet.id
+
+  body = {
+    properties = {
+
+      # List of address prefixes in subnet
+      addressPrefixes = ["${var.functions_subnet_prefix}"]
+
+      # Service delegations
+      delegations = [
+        {
+          name = "functions_delegation"
+          properties = {
+            serviceName = "Microsoft.Web/serverFarms"
+            #actions     = ["Microsoft.Network/virtualNetworks/subnets/action"]
+          }
+        }
+      ]
+
+      # Attach to NSG
+      networkSecurityGroup = {
+        id = azurerm_network_security_group.functions_nsg.id
+      }
+    }
+  }
+}
+
+resource "azapi_resource" "privateEndpoint_subnet" {
+  type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
+  name      = "${local.abbrs.networkVirtualNetworksSubnets}privateendpoints-${random_id.random_deployment_suffix.hex}"
+  parent_id = data.azurerm_virtual_network.vnet.id
+
+  body = {
+    properties = {
+
+      # List of address prefixes in subnet
+      addressPrefixes = ["${var.privateendpoint_subnet_prefix}"]
+
+      # Attach to NSG
+      networkSecurityGroup = {
+        id = azurerm_network_security_group.privateendpoints_nsg.id
+      }
+    }
+  }
 }
 
 resource "azurerm_network_security_group" "apim_nsg" {
   name                = "${local.abbrs.networkNetworkSecurityGroups}apim-${random_id.random_deployment_suffix.hex}"
-    location            = data.azurerm_resource_group.rg.location
-    resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "Client_communication_to_API_Management"
@@ -184,42 +209,42 @@ resource "azurerm_network_security_group" "apim_nsg" {
   }
 
   security_rule {
-    name                         = "Publish_DiagnosticLogs_And_Metrics"
-    description                  = "API Management logs and metrics for consumption by admins and your IT team are all part of the management plane"
-    priority                     = 185
-    direction                    = "Outbound"
-    access                       = "Allow"
-    protocol                     = "Tcp"
-    source_port_range            = "*"
-    destination_port_ranges      = ["443", "12000", "1886"]
-    source_address_prefix        = "VirtualNetwork"
-    destination_address_prefix   = "AzureMonitor"
+    name                       = "Publish_DiagnosticLogs_And_Metrics"
+    description                = "API Management logs and metrics for consumption by admins and your IT team are all part of the management plane"
+    priority                   = 185
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["443", "12000", "1886"]
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "AzureMonitor"
   }
 
   security_rule {
-    name                         = "Connect_To_SMTP_Relay_For_SendingEmails"
-    description                  = "APIM features the ability to generate email traffic as part of the data plane and the management plane"
-    priority                     = 190
-    direction                    = "Outbound"
-    access                       = "Allow"
-    protocol                     = "Tcp"
-    source_port_range            = "*"
-    destination_port_ranges      = ["25", "587", "25028"]
-    source_address_prefix        = "VirtualNetwork"
-    destination_address_prefix   = "Internet"
+    name                       = "Connect_To_SMTP_Relay_For_SendingEmails"
+    description                = "APIM features the ability to generate email traffic as part of the data plane and the management plane"
+    priority                   = 190
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["25", "587", "25028"]
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "Internet"
   }
 
   security_rule {
-    name                         = "Authenticate_To_Azure_Active_Directory"
-    description                  = "Connect to Azure Active Directory for developer Portal authentication or for OAuth 2 flow during any proxy authentication"
-    priority                     = 200
-    direction                    = "Outbound"
-    access                       = "Allow"
-    protocol                     = "Tcp"
-    source_port_range            = "*"
-    destination_port_ranges      = ["80", "443"]
-    source_address_prefix        = "VirtualNetwork"
-    destination_address_prefix   = "AzureActiveDirectory"
+    name                       = "Authenticate_To_Azure_Active_Directory"
+    description                = "Connect to Azure Active Directory for developer Portal authentication or for OAuth 2 flow during any proxy authentication"
+    priority                   = 200
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["80", "443"]
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "AzureActiveDirectory"
   }
 
   security_rule {
@@ -262,12 +287,12 @@ resource "azurerm_network_security_group" "apim_nsg" {
 
 resource "azurerm_network_security_group" "functions_nsg" {
   name                = "${local.abbrs.networkNetworkSecurityGroups}functions-${random_id.random_deployment_suffix.hex}"
-    location            = data.azurerm_resource_group.rg.location
-    resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
 resource "azurerm_network_security_group" "privateendpoints_nsg" {
   name                = "${local.abbrs.networkNetworkSecurityGroups}privateendpoints-${random_id.random_deployment_suffix.hex}"
-    location            = data.azurerm_resource_group.rg.location
-    resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
