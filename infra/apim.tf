@@ -12,6 +12,9 @@ resource "azurerm_api_management" "apim" {
   identity {
     type = "SystemAssigned"
   }
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_api_management_logger" "apim_logger" {

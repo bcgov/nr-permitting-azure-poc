@@ -18,8 +18,46 @@ resource "azapi_resource" "apim_subnet" {
       networkSecurityGroup = {
         id = azurerm_network_security_group.apim_nsg.id
       }
+
+      serviceEndpoints = [
+        {
+          service = "Microsoft.Sql"
+          locations = [
+            data.azurerm_resource_group.rg.location
+          ]
+        },
+        {
+          service = "Microsoft.Storage"
+          locations = [
+            data.azurerm_resource_group.rg.location
+          ]
+        },
+        {
+          service = "Microsoft.EventHub"
+          locations = [
+            data.azurerm_resource_group.rg.location
+          ]
+        },
+        {
+          service = "Microsoft.KeyVault"
+          locations = [
+            data.azurerm_resource_group.rg.location
+          ]
+        }
+      ]
+
+      routeTable = {
+        id = azurerm_route_table.apim_route_table.id
+      }
     }
   }
+  lifecycle {
+    ignore_changes = [body.properties.serviceEndpoints]
+  }
+  depends_on = [ azurerm_network_security_group.apim_nsg, azurerm_route_table.apim_route_table ]
+  locks = [
+    data.azurerm_virtual_network.vnet.id
+  ]
 }
 
 resource "azapi_resource" "functions_subnet" {
@@ -50,6 +88,10 @@ resource "azapi_resource" "functions_subnet" {
       }
     }
   }
+  depends_on = [ azurerm_network_security_group.functions_nsg ]
+  locks = [
+    data.azurerm_virtual_network.vnet.id
+  ]
 }
 
 resource "azapi_resource" "privateEndpoint_subnet" {
@@ -69,6 +111,10 @@ resource "azapi_resource" "privateEndpoint_subnet" {
       }
     }
   }
+  depends_on = [ azurerm_network_security_group.privateendpoints_nsg ]
+  locks = [
+    data.azurerm_virtual_network.vnet.id
+  ]
 }
 
 resource "azurerm_network_security_group" "apim_nsg" {
@@ -283,16 +329,46 @@ resource "azurerm_network_security_group" "apim_nsg" {
     source_address_prefix      = "VirtualNetwork"
     destination_address_prefix = "Internet"
   }
+    lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_network_security_group" "functions_nsg" {
   name                = "${local.abbrs.networkNetworkSecurityGroups}functions-${random_id.random_deployment_suffix.hex}"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
+    lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_network_security_group" "privateendpoints_nsg" {
   name                = "${local.abbrs.networkNetworkSecurityGroups}privateendpoints-${random_id.random_deployment_suffix.hex}"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
+    lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_route_table" "apim_route_table" {
+  name                = "${local.abbrs.networkRouteTables}apim-${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+
+  route {
+    name                   = "ApimMgmtEndpointToApimServiceTag"
+    address_prefix         = "ApiManagement"
+    next_hop_type          = "Internet"
+  }
+
+  route {
+    name                   = "ApimToInternet"
+    address_prefix         = "0.0.0.0/0"
+    next_hop_type          = "Internet"
+  }
+      lifecycle {
+    ignore_changes = [tags]
+  }
 }

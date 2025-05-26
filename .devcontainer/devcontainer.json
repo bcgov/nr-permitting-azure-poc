@@ -17,7 +17,12 @@
 	"ghcr.io/devcontainers/features/git:1": {},
 	"ghcr.io/devcontainers/features/terraform:1": {},
 	"ghcr.io/azure/azure-dev/azd:0": {},
-  "ghcr.io/jlaundry/devcontainer-features/azure-functions-core-tools:1": {}
+  "ghcr.io/jlaundry/devcontainer-features/azure-functions-core-tools:1": {},
+  "docker-from-docker": {
+        "version": "latest",
+        "moby": true,
+        "dockerDashComposeVersion": "v1"
+    }
   },
   "customizations": {
     "vscode": {

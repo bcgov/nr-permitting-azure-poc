@@ -4,6 +4,9 @@ resource "azurerm_container_registry" "acr" {
   resource_group_name = data.azurerm_resource_group.rg.name
   sku                 = "Premium"
   admin_enabled       = true
+    lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_private_endpoint" "acr_private_endpoint" {
@@ -16,5 +19,8 @@ resource "azurerm_private_endpoint" "acr_private_endpoint" {
     private_connection_resource_id = azurerm_container_registry.acr.id
     is_manual_connection           = false
     subresource_names              = ["registry"]
+  }
+    lifecycle {
+    ignore_changes = [tags, private_dns_zone_group]
   }
 }
