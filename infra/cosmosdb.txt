@@ -4,7 +4,8 @@ resource "azurerm_cosmosdb_account" "cosmosdb_sql" {
   resource_group_name = data.azurerm_resource_group.rg.name
   offer_type          = "Standard"
   kind                = "GlobalDocumentDB"
-
+  public_network_access_enabled = false
+  
   consistency_policy {
     consistency_level = "Session"
   }
@@ -26,7 +27,7 @@ resource "azurerm_private_endpoint" "cosmosdb_sql_db_private_endpoint" {
   name                = "${local.abbrs.privateEndpoint}${local.abbrs.documentDBDatabaseAccounts}${random_id.random_deployment_suffix.hex}"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
-  subnet_id           = azurerm_subnet.privateEndpoint.id
+  subnet_id           = azapi_resource.privateEndpoint_subnet.id
   private_service_connection {
     name                           = "cosmosdb_sql_db_privateserviceconnection"
     private_connection_resource_id = azurerm_cosmosdb_account.cosmosdb_sql.id

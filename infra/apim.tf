@@ -4,7 +4,7 @@ resource "azurerm_api_management" "apim" {
   resource_group_name = data.azurerm_resource_group.rg.name
   virtual_network_type = var.apim_virtual_network_type
   virtual_network_configuration {
-    subnet_id = azurerm_subnet.apim.id
+    subnet_id = azapi_resource.apim_subnet.id
   }
   publisher_email     = var.publisher_email
   publisher_name      = var.publisher_name
@@ -12,7 +12,9 @@ resource "azurerm_api_management" "apim" {
   identity {
     type = "SystemAssigned"
   }
-  depends_on = [ azurerm_subnet_network_security_group_association.apim_nsg_association ]
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_api_management_logger" "apim_logger" {
