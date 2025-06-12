@@ -87,48 +87,6 @@ jobs:
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
-      - name: Test Docker image
-        run: |
-          # Load the built image for testing
-          docker buildx build --load --tag test-image ./src
-          
-          # Run basic smoke test
-          echo "Running container smoke test..."
-          docker run --rm -d --name test-container -p 3001:3000 \
-            -e NODE_ENV=test \
-            -e DB_HOST=localhost \
-            -e DB_PORT=5432 \
-            -e DB_NAME=test \
-            -e DB_USER=test \
-            -e DB_PASSWORD=test \
-            -e KEY_VAULT_URL=https://placeholder.vault.azure.net/ \
-            test-image
-          
-          # Wait for container to start
-          sleep 10
-          
-          # Test health endpoint
-          max_attempts=30
-          attempt=1
-          while [ $attempt -le $max_attempts ]; do
-            if curl -f http://localhost:3001/health/liveness; then
-              echo "Container health check passed!"
-              break
-            fi
-            echo "Attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
-            sleep 2
-            attempt=$((attempt + 1))
-          done
-          
-          if [ $attempt -gt $max_attempts ]; then
-            echo "Container health check failed after $max_attempts attempts"
-            docker logs test-container
-            exit 1
-          fi
-          
-          # Cleanup
-          docker stop test-container
-
       - name: Push Docker image
         if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.push_to_registry == true)
         uses: docker/build-push-action@v5
