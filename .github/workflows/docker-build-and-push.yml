@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - container_apps
     paths:
       - 'src/**'
       - '.github/workflows/docker-build-and-push.yml'
