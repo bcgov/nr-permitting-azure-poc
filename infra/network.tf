@@ -46,37 +46,37 @@ resource "azapi_resource" "apim_subnet" {
         }
       ]
 
-      routeTable = {
+      /* routeTable = {
         id = azurerm_route_table.apim_route_table.id
-      }
+      } */
     }
   }
   lifecycle {
     ignore_changes = [body.properties.serviceEndpoints]
   }
-  depends_on = [ azurerm_network_security_group.apim_nsg, azurerm_route_table.apim_route_table ]
+  //depends_on = [ azurerm_network_security_group.apim_nsg, azurerm_route_table.apim_route_table ]
   locks = [
     data.azurerm_virtual_network.vnet.id
   ]
 }
 
-resource "azapi_resource" "functions_subnet" {
+resource "azapi_resource" "container_apps_subnet" {
   type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
-  name      = "${local.abbrs.networkVirtualNetworksSubnets}functions-${random_id.random_deployment_suffix.hex}"
+  name      = "${local.abbrs.networkVirtualNetworksSubnets}containerapps-${random_id.random_deployment_suffix.hex}"
   parent_id = data.azurerm_virtual_network.vnet.id
 
   body = {
     properties = {
 
       # List of address prefixes in subnet
-      addressPrefixes = ["${var.functions_subnet_prefix}"]
+      addressPrefixes = ["${var.container_apps_subnet_prefix}"]
 
       # Service delegations
       delegations = [
         {
-          name = "functions_delegation"
+          name = "containerapps_delegation"
           properties = {
-            serviceName = "Microsoft.Web/serverFarms"
+            serviceName = "Microsoft.App/environments"
             #actions     = ["Microsoft.Network/virtualNetworks/subnets/action"]
           }
         }
@@ -84,11 +84,11 @@ resource "azapi_resource" "functions_subnet" {
 
       # Attach to NSG
       networkSecurityGroup = {
-        id = azurerm_network_security_group.functions_nsg.id
+        id = azurerm_network_security_group.containerapps_nsg.id
       }
     }
   }
-  depends_on = [ azurerm_network_security_group.functions_nsg ]
+  depends_on = [ azurerm_network_security_group.containerapps_nsg ]
   locks = [
     data.azurerm_virtual_network.vnet.id
   ]
@@ -334,11 +334,52 @@ resource "azurerm_network_security_group" "apim_nsg" {
   }
 }
 
-resource "azurerm_network_security_group" "functions_nsg" {
-  name                = "${local.abbrs.networkNetworkSecurityGroups}functions-${random_id.random_deployment_suffix.hex}"
+resource "azurerm_network_security_group" "containerapps_nsg" {
+  # This NSG is used for the Container Apps subnet
+  name                = "${local.abbrs.networkNetworkSecurityGroups}containerapps-${random_id.random_deployment_suffix.hex}"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
-    lifecycle {
+  
+  # Allow outbound traffic to private endpoints subnet for database connectivity
+  security_rule {
+    name                       = "Allow_ContainerApps_To_PrivateEndpoints"
+    priority                   = 100
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "5432"
+    source_address_prefix      = var.container_apps_subnet_prefix
+    destination_address_prefix = var.privateendpoint_subnet_prefix
+  }
+  
+  # Allow outbound HTTPS for general Azure services
+  security_rule {
+    name                       = "Allow_HTTPS_Outbound"
+    priority                   = 110
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  
+  # Allow outbound HTTP for general connectivity
+  security_rule {
+    name                       = "Allow_HTTP_Outbound"
+    priority                   = 120
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  
+  lifecycle {
     ignore_changes = [tags]
   }
 }
@@ -347,12 +388,26 @@ resource "azurerm_network_security_group" "privateendpoints_nsg" {
   name                = "${local.abbrs.networkNetworkSecurityGroups}privateendpoints-${random_id.random_deployment_suffix.hex}"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
-    lifecycle {
+  
+  # Allow inbound PostgreSQL traffic from Container Apps subnet
+  security_rule {
+    name                       = "Allow_ContainerApps_To_PostgreSQL"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "5432"
+    source_address_prefix      = var.container_apps_subnet_prefix
+    destination_address_prefix = "*"
+  }
+  
+  lifecycle {
     ignore_changes = [tags]
   }
 }
 
-resource "azurerm_route_table" "apim_route_table" {
+/* resource "azurerm_route_table" "apim_route_table" {
   name                = "${local.abbrs.networkRouteTables}apim-${random_id.random_deployment_suffix.hex}"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
@@ -371,4 +426,4 @@ resource "azurerm_route_table" "apim_route_table" {
       lifecycle {
     ignore_changes = [tags]
   }
-}
+} */

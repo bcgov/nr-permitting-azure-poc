@@ -1,0 +1,595 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NR Permitting API",
+    "version": "1.0.0",
+    "description": "Natural Resources Permitting API with Azure Integration",
+    "contact": {
+      "name": "NR Permitting Team",
+      "email": "support@nr-permitting.gov"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Ocp-Apim-Subscription-Key",
+        "description": "Azure API Management subscription key"
+      },
+      "OAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize",
+            "tokenUrl": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token",
+            "scopes": {
+              "api://nr-permitting/Records.Write": "Write access to records",
+              "api://nr-permitting/Records.Read": "Read access to records"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "CreateRecordRequest": {
+        "type": "object",
+        "required": [
+          "version",
+          "kind",
+          "system_id",
+          "record_id",
+          "record_kind",
+          "process_event"
+        ],
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "Version of the record format",
+            "example": "1.0.0"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "RecordLinkage",
+              "ProcessEventSet"
+            ],
+            "description": "Type of record being created"
+          },
+          "system_id": {
+            "type": "string",
+            "description": "Identifier of the system creating the record",
+            "example": "nr-permits-system"
+          },
+          "record_id": {
+            "type": "string",
+            "description": "Unique identifier for the record within the system",
+            "example": "PERMIT-2024-001"
+          },
+          "record_kind": {
+            "type": "string",
+            "enum": [
+              "Permit",
+              "Project",
+              "Submission",
+              "Tracking"
+            ],
+            "description": "Category of the record"
+          },
+          "process_event": {
+            "type": "object",
+            "description": "JSON object containing the process event data",
+            "additionalProperties": true,
+            "example": {
+              "event_type": "application_submitted",
+              "timestamp": "2024-01-15T10:30:00Z",
+              "applicant_id": "APP-12345",
+              "permit_type": "timber_harvest",
+              "location": {
+                "latitude": 54.7267,
+                "longitude": -127.7476
+              }
+            }
+          }
+        }
+      },
+      "CreateRecordResponse": {
+        "type": "object",
+        "properties": {
+          "tx_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique transaction identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the record format"
+          },
+          "kind": {
+            "type": "string",
+            "description": "Type of record"
+          },
+          "system_id": {
+            "type": "string",
+            "description": "System identifier"
+          },
+          "record_id": {
+            "type": "string",
+            "description": "Record identifier"
+          },
+          "record_kind": {
+            "type": "string",
+            "description": "Category of the record"
+          },
+          "process_event": {
+            "type": "object",
+            "description": "Process event data",
+            "additionalProperties": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Record creation timestamp"
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error type"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message"
+          },
+          "details": {
+            "type": "object",
+            "description": "Additional error details",
+            "additionalProperties": true
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Error timestamp"
+          },
+          "path": {
+            "type": "string",
+            "description": "API path where error occurred"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "healthy",
+              "unhealthy"
+            ],
+            "description": "Overall system health status"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Health check timestamp"
+          },
+          "version": {
+            "type": "string",
+            "description": "API version"
+          },
+          "database": {
+            "type": "object",
+            "properties": {
+              "connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              },
+              "latency_ms": {
+                "type": "number",
+                "description": "Database response latency in milliseconds"
+              }
+            }
+          },
+          "environment": {
+            "type": "string",
+            "description": "Deployment environment"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "SubscriptionKey": {
+        "name": "Ocp-Apim-Subscription-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Azure API Management subscription key"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "description": "Returns the current health status of the API and its dependencies. Used for monitoring and Azure API Management health probes.",
+        "tags": [
+          "Health"
+        ],
+        "parameters": [
+          {
+            "name": "detailed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Include detailed health information"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "healthy",
+                  "timestamp": "2024-01-15T10:30:00.123Z",
+                  "version": "1.0.0",
+                  "database": {
+                    "connected": true,
+                    "latency_ms": 25
+                  },
+                  "environment": "development"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "unhealthy",
+                  "timestamp": "2024-01-15T10:30:00.123Z",
+                  "version": "1.0.0",
+                  "database": {
+                    "connected": false
+                  },
+                  "environment": "development"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/liveness": {
+      "get": {
+        "summary": "Liveness probe endpoint",
+        "description": "Simple liveness check for Kubernetes/container orchestration. Returns 200 if the service is running.",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Service is alive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "alive"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/readiness": {
+      "get": {
+        "summary": "Readiness probe endpoint",
+        "description": "Readiness check for Kubernetes/container orchestration. Returns 200 if the service is ready to accept traffic.",
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "Service is ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ready"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is not ready"
+          }
+        }
+      }
+    },
+    "/records": {
+      "post": {
+        "summary": "Create a new record",
+        "description": "Creates a new record in the Natural Resources Permitting system. This operation stores process event data for permits, projects, submissions, or tracking records.",
+        "tags": [
+          "Records"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SubscriptionKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecordRequest"
+              },
+              "examples": {
+                "permitApplication": {
+                  "summary": "Permit Application Record",
+                  "description": "Example of a permit application process event",
+                  "value": {
+                    "version": "1.0.0",
+                    "kind": "ProcessEventSet",
+                    "system_id": "nr-permits-system",
+                    "record_id": "PERMIT-2024-001",
+                    "record_kind": "Permit",
+                    "process_event": {
+                      "event_type": "application_submitted",
+                      "timestamp": "2024-01-15T10:30:00Z",
+                      "applicant_id": "APP-12345",
+                      "permit_type": "timber_harvest",
+                      "location": {
+                        "latitude": 54.7267,
+                        "longitude": -127.7476
+                      },
+                      "area_hectares": 150.5,
+                      "estimated_volume_m3": 2500
+                    }
+                  }
+                },
+                "projectTracking": {
+                  "summary": "Project Tracking Record",
+                  "description": "Example of a project tracking process event",
+                  "value": {
+                    "version": "1.0.0",
+                    "kind": "RecordLinkage",
+                    "system_id": "nr-projects-system",
+                    "record_id": "PROJ-2024-042",
+                    "record_kind": "Project",
+                    "process_event": {
+                      "event_type": "milestone_completed",
+                      "timestamp": "2024-01-15T14:20:00Z",
+                      "project_phase": "environmental_assessment",
+                      "completion_percentage": 75,
+                      "next_milestone": "public_consultation",
+                      "responsible_officer": "officer_456"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Record created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRecordResponse"
+                },
+                "example": {
+                  "tx_id": "123e4567-e89b-12d3-a456-426614174000",
+                  "version": "1.0.0",
+                  "kind": "ProcessEventSet",
+                  "system_id": "nr-permits-system",
+                  "record_id": "PERMIT-2024-001",
+                  "record_kind": "Permit",
+                  "process_event": {
+                    "event_type": "application_submitted",
+                    "timestamp": "2024-01-15T10:30:00Z",
+                    "applicant_id": "APP-12345",
+                    "permit_type": "timber_harvest"
+                  },
+                  "created_at": "2024-01-15T10:30:00.123Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "error": "ValidationError",
+                  "message": "Request validation failed",
+                  "details": [
+                    "Body: 'kind' must be one of [RecordLinkage, ProcessEventSet]"
+                  ],
+                  "timestamp": "2024-01-15T10:30:00.123Z",
+                  "path": "/api/v1/records"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service temporarily unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "x-azure-apim": {
+          "policies": [
+            {
+              "rate-limit": "100 per hour"
+            },
+            {
+              "quota": "1000 per month"
+            },
+            {
+              "validate-jwt": true
+            }
+          ]
+        }
+      }
+    },
+    "/records/{tx_id}": {
+      "get": {
+        "summary": "Get record by transaction ID",
+        "description": "Retrieves a specific record using its unique transaction identifier",
+        "tags": [
+          "Records"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SubscriptionKey"
+          },
+          {
+            "name": "tx_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Unique transaction identifier",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Record found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRecordResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

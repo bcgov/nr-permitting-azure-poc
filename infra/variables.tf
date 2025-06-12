@@ -22,10 +22,10 @@ variable "apim_subnet_prefix" {
   description = "The address prefix for the API Management subnet."
 }
 
-variable "functions_subnet_prefix" {
+variable "container_apps_subnet_prefix" {
   type        = string
   default     = "10.46.8.64/26"
-  description = "The address prefix for the Functions subnet."
+  description = "The address prefix for the Container Apps subnet."
 }
 
 variable "privateendpoint_subnet_prefix" {

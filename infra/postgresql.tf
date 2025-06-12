@@ -10,14 +10,18 @@ resource "azurerm_postgresql_flexible_server" "postgresql_server" {
   resource_group_name           = data.azurerm_resource_group.rg.name
   version                       = "16"
   public_network_access_enabled = false
-  zone = 1
-  administrator_login = "pgsqladmin"
-  administrator_password = random_password.postgresql_admin_password.result
+  zone                          = 1
+  administrator_login           = "pgsqladmin"
+  administrator_password        = random_password.postgresql_admin_password.result
 
-  storage_mb   = 32768
-  storage_tier = "P30"
+  storage_mb                   = 32768
+  storage_tier                 = "P30"
+  auto_grow_enabled           = true
+  backup_retention_days       = 7
+  geo_redundant_backup_enabled = false
 
   sku_name = "B_Standard_B1ms"
+  
   authentication {
     active_directory_auth_enabled = false
     password_auth_enabled         = true
@@ -32,6 +36,7 @@ resource "azurerm_private_endpoint" "postgresql_server_private_endpoint" {
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
   subnet_id           = azapi_resource.privateEndpoint_subnet.id
+  
   private_service_connection {
     name                           = "postgresql_server_privateserviceconnection"
     private_connection_resource_id = azurerm_postgresql_flexible_server.postgresql_server.id

@@ -27,7 +27,22 @@ resource "azurerm_api_management_logger" "apim_logger" {
   }
 }
 
-resource "azurerm_api_management_api" "service_bus_api" {
+resource "azurerm_api_management_api" "nr-permitting-api" {
+  name                = "nr-permitting-api"
+  api_management_name = azurerm_api_management.apim.name
+  resource_group_name = data.azurerm_resource_group.rg.name
+  revision            = "1"
+  display_name        = "NR Permitting API"
+  path                = "nr-permitting"
+  protocols           = ["https"]
+  #service_url = azurerm_container_app.container_app.latest_revision_fqdn
+   import {
+    content_format = "openapi"
+    content_value  = file("./../src/docs/openapi-azure.yaml")
+  }
+}
+
+/* resource "azurerm_api_management_api" "service_bus_api" {
   name                  = "service-bus-operations"
   resource_group_name   = data.azurerm_resource_group.rg.name
   api_management_name   = azurerm_api_management.apim.name
@@ -36,9 +51,9 @@ resource "azurerm_api_management_api" "service_bus_api" {
   protocols             = ["https"]
   subscription_required = true
   revision              = "1"
-}
+} */
 
-resource "azurerm_api_management_api_operation" "send_message" {
+/* resource "azurerm_api_management_api_operation" "send_message" {
   operation_id        = "send-message"
   api_name            = azurerm_api_management_api.service_bus_api.name
   resource_group_name = data.azurerm_resource_group.rg.name
@@ -52,9 +67,9 @@ resource "azurerm_api_management_api_operation" "send_message" {
     type     = "string"
     required = true
   }
-}
+} */
 
-resource "azurerm_api_management_api_operation_policy" "send_message_policy" {
+/* resource "azurerm_api_management_api_operation_policy" "send_message_policy" {
   api_name            = azurerm_api_management_api.service_bus_api.name
   resource_group_name = data.azurerm_resource_group.rg.name
   api_management_name = azurerm_api_management.apim.name
@@ -74,7 +89,7 @@ resource "azurerm_api_management_api_operation_policy" "send_message_policy" {
                 JObject json = context.Request.Body.As<JObject>(preserveContent: true);
                 return JsonConvert.SerializeObject(json);
         }</set-body>
-        <set-backend-service base-url="${azurerm_servicebus_namespace.servicebus_namespace.endpoint}" />
+        <set-backend-service base-url="${azurerm_container_app.container_app.latest_revision_fqdn}" />
         <rewrite-uri template="@("/" + (string)context.Variables["queue_or_topic"] +"/messages" )" copy-unmatched-params="false" />
     </inbound>
     <backend>
@@ -105,4 +120,4 @@ resource "azurerm_api_management_api_operation_policy" "send_message_policy" {
     </on-error>
 </policies>
 XML
-}
+} */

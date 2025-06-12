@@ -13,7 +13,19 @@ data "azurerm_resource_group" "rg" {
   name = var.resource_group_name
 }
 
-resource "azurerm_role_assignment" "apim_servicebus_data_sender" {
+resource "azurerm_user_assigned_identity" "container_app_identity" {
+  name                = "${local.abbrs.appContainerApps}identity-${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+}
+
+resource "azurerm_role_assignment" "container_app_acr_pull" {
+  scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.container_app_identity.principal_id
+}
+
+/* resource "azurerm_role_assignment" "apim_servicebus_data_sender" {
   scope                = azurerm_servicebus_namespace.servicebus_namespace.id
   role_definition_name = "Azure Service Bus Data Sender"
   principal_id         = azurerm_api_management.apim.identity[0].principal_id
@@ -31,12 +43,8 @@ resource "azurerm_role_assignment" "function_app_servicebus_queue_data_receiver"
   principal_id         = azurerm_linux_function_app.function_app.identity[0].principal_id
 }
 
-resource "azurerm_role_assignment" "function_app_acr_pull" {
-  scope                = azurerm_container_registry.acr.id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_linux_function_app.function_app.identity[0].principal_id
-}
 
+ */
 /* resource "azurerm_container_registry_task" "acr_task" {
   name                  = "tfex-acr-task-${random_string.azurerm_api_management_name.result}"
   container_registry_id = azurerm_container_registry.acr.id
@@ -70,7 +78,7 @@ resource "azurerm_application_insights" "app_insights" {
   }
 }
 
-resource "azurerm_monitor_diagnostic_setting" "function_app_diagnostics" {
+/* resource "azurerm_monitor_diagnostic_setting" "function_app_diagnostics" {
   name                       = "function_app_diagnostics"
   target_resource_id         = azurerm_linux_function_app.function_app.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.example.id
@@ -82,7 +90,7 @@ resource "azurerm_monitor_diagnostic_setting" "function_app_diagnostics" {
   metric {
     category = "AllMetrics"
   }
-}
+} */
 
 resource "azurerm_log_analytics_workspace" "example" {
   name                = "${local.abbrs.operationalInsightsWorkspaces}${random_id.random_deployment_suffix.hex}"
