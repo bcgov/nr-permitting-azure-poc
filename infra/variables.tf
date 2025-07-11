@@ -102,8 +102,8 @@ variable "database_admin_password" {
   }
 }
 
-variable "ghcr_pat" {
+/* variable "ghcr_pat" {
   description = "GitHub Container Registry Personal Access Token (PAT) for pulling images."
   type        = string
   sensitive   = true
-}
+} */

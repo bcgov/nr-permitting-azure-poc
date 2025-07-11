@@ -50,13 +50,13 @@ resource "azurerm_container_app" "container_app" {
 
   secret {
     name  = "ghcr-pat"
-    value = var.ghcr_pat
+    value = ""
   }
 
   template {
     container {
       name   = "nr-permitting-api"
-      image  = "ghcr.io/adamjwebb/nr-permitting-api:latest"
+      image  = "ghcr.io/adamjwebb/nr-permitting-azure-poc:latest"
       cpu    = "0.5"
       memory = "1.0Gi"
       env {
