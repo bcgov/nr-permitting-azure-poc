@@ -50,7 +50,7 @@ resource "azurerm_container_app" "container_app" {
   template {
     container {
       name   = "nr-permitting-api"
-      image  = "mcr.microsoft.com/appsvc/staticsite:latest"
+      image  = "ghcr.io/adamjwebb/nr-permitting-api:latest"
       cpu    = "0.5"
       memory = "1.0Gi"
       env {
@@ -98,5 +98,10 @@ resource "azurerm_container_app" "container_app" {
         value = "10"
       }
     }
+  }
+
+  registry {
+    server   = "ghcr.io"
+    username = "USERNAME"
   }
 }
