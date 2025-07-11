@@ -4,7 +4,7 @@ resource "azurerm_container_app_environment" "container_app_env" {
   resource_group_name                = data.azurerm_resource_group.rg.name
   infrastructure_resource_group_name = "${data.azurerm_resource_group.rg.name}-capp-infra"
   infrastructure_subnet_id           = azapi_resource.container_apps_subnet.id
-  internal_load_balancer_enabled     = true
+  internal_load_balancer_enabled     = false
   zone_redundancy_enabled            = false
   workload_profile {
     workload_profile_type = "Consumption"
@@ -13,6 +13,22 @@ resource "azurerm_container_app_environment" "container_app_env" {
     minimum_count         = 1
   }
 }
+
+/* resource "azurerm_private_endpoint" "container_app_env_private_endpoint" {
+  name                = "${local.abbrs.privateEndpoint}${local.abbrs.appContainerApps}${random_id.random_deployment_suffix.hex}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  subnet_id           = azapi_resource.privateEndpoint_subnet.id
+  private_service_connection {
+    name                           = "container_app_env_privateserviceconnection"
+    private_connection_resource_id = azurerm_container_app_environment.container_app_env.id
+    is_manual_connection           = false
+    subresource_names              = ["managedEnvironments"]
+  }
+    lifecycle {
+    ignore_changes = [tags, private_dns_zone_group]
+  }
+} */
 
 resource "azurerm_container_app" "container_app" {
   name                         = "${local.abbrs.appContainerApps}${random_id.random_deployment_suffix.hex}"
@@ -26,26 +42,15 @@ resource "azurerm_container_app" "container_app" {
       percentage      = "100"
       latest_revision = true
     }
-    external_enabled           = false
+    external_enabled           = true
     transport                  = "auto"
     allow_insecure_connections = false
-
-  }
-
-  identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.container_app_identity.id]
-  }
-
-  registry {
-    server   = azurerm_container_registry.acr.login_server
-    identity = azurerm_user_assigned_identity.container_app_identity.id
   }
 
   template {
     container {
       name   = "nr-permitting-api"
-      image  = "${azurerm_container_registry.acr.login_server}/nr-permitting-api:latest"
+      image  = "mcr.microsoft.com/appsvc/staticsite:latest"
       cpu    = "0.5"
       memory = "1.0Gi"
       env {
@@ -93,21 +98,5 @@ resource "azurerm_container_app" "container_app" {
         value = "10"
       }
     }
-  }
-}
-
-resource "azurerm_private_endpoint" "container_app_private_endpoint" {
-  name                = "${local.abbrs.privateEndpoint}${local.abbrs.appContainerApps}${random_id.random_deployment_suffix.hex}"
-  location            = data.azurerm_resource_group.rg.location
-  resource_group_name = data.azurerm_resource_group.rg.name
-  subnet_id           = azapi_resource.privateEndpoint_subnet.id
-  private_service_connection {
-    name                           = "container_app_privateserviceconnection"
-    private_connection_resource_id = azurerm_container_app.container_app.id
-    is_manual_connection           = false
-    subresource_names              = ["containerApps"]
-  }
-    lifecycle {
-    ignore_changes = [tags, private_dns_zone_group]
   }
 }

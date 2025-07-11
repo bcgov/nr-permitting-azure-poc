@@ -83,3 +83,21 @@ variable "sku_count" {
     error_message = "The sku_count must be one of the following: 1, 2."
   }
 }
+
+variable "database_admin_username" {
+  description = "PostgreSQL administrator username"
+  type        = string
+  default     = "postgres_admin"
+  sensitive   = true
+}
+
+variable "database_admin_password" {
+  description = "PostgreSQL administrator password"
+  type        = string
+  default     = null
+  sensitive   = true
+  validation {
+    condition     = var.database_admin_password == null || length(var.database_admin_password) >= 8
+    error_message = "Database password must be at least 8 characters long when provided."
+  }
+}
