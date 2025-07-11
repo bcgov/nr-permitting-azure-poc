@@ -101,3 +101,9 @@ variable "database_admin_password" {
     error_message = "Database password must be at least 8 characters long when provided."
   }
 }
+
+variable "ghcr_pat" {
+  description = "GitHub Container Registry Personal Access Token (PAT) for pulling images."
+  type        = string
+  sensitive   = true
+}

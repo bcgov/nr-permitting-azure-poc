@@ -47,6 +47,12 @@ resource "azurerm_container_app" "container_app" {
     allow_insecure_connections = false
   }
 
+
+  secret {
+    name  = "ghcr-pat"
+    value = var.ghcr_pat
+  }
+
   template {
     container {
       name   = "nr-permitting-api"
@@ -101,7 +107,8 @@ resource "azurerm_container_app" "container_app" {
   }
 
   registry {
-    server   = "ghcr.io"
-    username = "USERNAME"
+    server                = "ghcr.io"
+    username              = "nr-permitting-azure-poc"
+    password_secret_name  = "ghcr-pat"
   }
 }
