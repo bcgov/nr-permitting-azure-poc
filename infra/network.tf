@@ -212,16 +212,13 @@ resource "azurerm_route_table" "apim_route_table" {
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
 
-  route {
-    name                   = "ApimMgmtEndpointToApimServiceTag"
-    address_prefix         = "ApiManagement"
-    next_hop_type          = "Internet"
-  }
-
-  route {
-    name                   = "ApimToInternet"
-    address_prefix         = "0.0.0.0/0"
-    next_hop_type          = "Internet"
+  dynamic "route" {
+    for_each = local.apim_route_table_routes
+    content {
+      name           = route.value.name
+      address_prefix = route.value.address_prefix
+      next_hop_type  = route.value.next_hop_type
+    }
   }
       lifecycle {
     ignore_changes = [tags]

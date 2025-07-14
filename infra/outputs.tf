@@ -11,7 +11,3 @@ output "container_app_url" {
   value = "https://${azurerm_container_app.container_app.latest_revision_fqdn}"
   description = "The full URL of the Container App"
 }
-
-/* output "api_management_service_name" {
-  value = azurerm_api_management.apim.name
-} */

@@ -1,3 +1,5 @@
+// Resource group variables
+
 variable "resource_group_location" {
   type        = string
   default     = "canadacentral"
@@ -9,6 +11,8 @@ variable "resource_group_name" {
   default     = "b9cee3-test-networking"
   description = "Name of the resource group."
 }
+
+// Network variables
 
 variable "vnet_name" {
   type        = string
@@ -33,6 +37,71 @@ variable "privateendpoint_subnet_prefix" {
   default     = "10.46.8.128/26"
   description = "The address prefix for the Private Endpoint subnet."
 }
+
+// Container App Environment variables
+
+variable "container_app_environment_zone_redundancy" {
+  type        = bool
+  default     = false
+  description = "Enable zone redundancy for the Container App environment."
+}
+
+// Container Apps variables
+
+variable "container_app_revision_mode" {
+  type        = string
+  default     = "Single"
+  description = "Revision mode for the Container App environment."
+  validation {
+    condition     = contains(["Single", "Multiple"], var.container_app_revision_mode)
+    error_message = "The revision_mode must be either 'Single' or 'Multiple'."
+  }
+}
+
+variable "container_app_ingress_target_port" {
+  type        = number
+  default     = 3000
+  description = "Target port for the Container App ingress."
+}
+
+variable "container_app_ingress_external_enabled" {
+  type        = bool
+  default     = true
+  description = "Enable external ingress for the Container App."
+}
+
+variable "container_app_ingress_transport" {
+  type        = string
+  default     = "auto"
+  description = "Transport protocol for the Container App ingress."
+  validation {
+    condition     = contains(["auto", "http", "https"], var.container_app_ingress_transport)
+    error_message = "The ingress transport must be one of the following: auto, http, https."
+  }
+}
+
+variable "container_app_image" {
+  type        = string
+  description = "Container image for the Container App."
+}
+
+variable "container_app_registry_server" {
+  type        = string
+  description = "Name of the Container Registry Server for the Container App."
+}
+
+variable "container_app_registry_username" {
+  type        = string
+  description = "Username for the Container Registry."
+}
+
+variable "container_app_registry_password" {
+  type        = string
+  description = "Password for the Container Registry."
+  sensitive   = true
+}
+
+// API Management variables
 
 variable "apim_virtual_network_type" {
   description = "The virtual network type of the API Management service"
@@ -84,26 +153,64 @@ variable "sku_count" {
   }
 }
 
-variable "database_admin_username" {
-  description = "PostgreSQL administrator username"
+// Database variables
+
+variable "postgresql_admin_login" {
   type        = string
-  default     = "postgres_admin"
-  sensitive   = true
+  default     = "pgsqladmin"
+  description = "The administrator login for the PostgreSQL server."
 }
 
-variable "database_admin_password" {
-  description = "PostgreSQL administrator password"
+variable "postgresql_server_version" {
   type        = string
-  default     = null
-  sensitive   = true
-  validation {
-    condition     = var.database_admin_password == null || length(var.database_admin_password) >= 8
-    error_message = "Database password must be at least 8 characters long when provided."
-  }
+  default     = "16"
+  description = "Version of the PostgreSQL server."
 }
 
-/* variable "ghcr_pat" {
-  description = "GitHub Container Registry Personal Access Token (PAT) for pulling images."
+variable "postgresql_storage_mb" {
+  type        = number
+  default     = 32768
+  description = "Storage size in MB for the PostgreSQL server."
+}
+
+variable "postgresql_storage_tier" {
   type        = string
-  sensitive   = true
-} */
+  default     = "P30"
+  description = "Storage tier for the PostgreSQL server."
+}
+
+variable "postgresql_auto_grow_enabled" {
+  type        = bool
+  default     = true
+  description = "Enable auto grow for the PostgreSQL server."
+}
+
+variable "postgresql_backup_retention_days" {
+  type        = number
+  default     = 7
+  description = "Number of days to retain backups for the PostgreSQL server."
+}
+
+variable "postgresql_geo_redundant_backup_enabled" {
+  type        = bool
+  default     = false
+  description = "Enable geo-redundant backups for the PostgreSQL server."
+}
+
+variable "postgresql_sku_name" {
+  type        = string
+  default     = "B_Standard_B1ms"
+  description = "SKU name for the PostgreSQL server."
+}
+
+variable "postgresql_ad_auth_enabled" {
+  type        = bool
+  default     = false
+  description = "Enable Active Directory authentication for PostgreSQL."
+}
+
+variable "postgresql_password_auth_enabled" {
+  type        = bool
+  default     = true
+  description = "Enable password authentication for PostgreSQL."
+}
