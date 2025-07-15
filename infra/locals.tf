@@ -196,54 +196,12 @@ locals {
     }
   }
 
-  containerapps_nsg_security_rules = {
-    "Allow_ContainerApps_To_PrivateEndpoints" = {
-      name                       = "Allow_ContainerApps_To_PrivateEndpoints"
-      priority                   = 100
-      direction                  = "Outbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "5432"
-      source_address_prefix      = var.container_apps_subnet_prefix
-      destination_address_prefix = var.privateendpoint_subnet_prefix
-    }
-    "Allow_HTTPS_Outbound" = {
-      name                       = "Allow_HTTPS_Outbound"
-      priority                   = 110
-      direction                  = "Outbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "443"
-      source_address_prefix      = "*"
-      destination_address_prefix = "*"
-    }
-    "Allow_HTTP_Outbound" = {
-      name                       = "Allow_HTTP_Outbound"
-      priority                   = 120
-      direction                  = "Outbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "80"
-      source_address_prefix      = "*"
-      destination_address_prefix = "*"
-    }
+  app_service_nsg_security_rules = {
+    
   }
 
   privateendpoints_nsg_security_rules = {
-    "Allow_ContainerApps_To_PostgreSQL" = {
-      name                       = "Allow_ContainerApps_To_PostgreSQL"
-      priority                   = 100
-      direction                  = "Inbound"
-      access                     = "Allow"
-      protocol                   = "Tcp"
-      source_port_range          = "*"
-      destination_port_range     = "5432"
-      source_address_prefix      = var.container_apps_subnet_prefix
-      destination_address_prefix = "*"
-    }
+    
   }
 
   apim_route_table_routes = {

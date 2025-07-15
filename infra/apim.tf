@@ -35,7 +35,7 @@ resource "azurerm_api_management_api" "nr-permitting-api" {
   display_name        = "NR Permitting API"
   path                = "nr-permitting"
   protocols           = ["https"]
-  service_url         = "https://${azurerm_container_app.container_app.latest_revision_fqdn}"
+  service_url         = "https://${azurerm_linux_web_app.app_service.default_hostname}"
    import {
     content_format = "openapi"
     content_value  = file("./../src/docs/openapi-azure.yaml")

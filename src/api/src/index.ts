@@ -1,6 +1,8 @@
+
 import express from 'express';
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import dns from 'dns';
 
 dotenv.config();
 
@@ -21,17 +23,24 @@ console.log('Configuring PostgreSQL pool:', {
   min: Number(process.env.DB_POOL_MIN) || 2,
 });
 
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  ssl: process.env.DB_SSL_MODE === 'require' ? { rejectUnauthorized: false } : false,
-  connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT) || 60000,
-  max: Number(process.env.DB_POOL_MAX) || 10,
-  min: Number(process.env.DB_POOL_MIN) || 2,
-});
+let pool: Pool;
+
+async function createPool() {
+  // Always resolve DB_HOST to IPv4
+  const resolvedHost = await dns.promises.lookup(process.env.DB_HOST || '', { family: 4 });
+  pool = new Pool({
+    host: resolvedHost.address,
+    port: Number(process.env.DB_PORT) || 5432,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    ssl: process.env.DB_SSL_MODE === 'require' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT) || 60000,
+    max: Number(process.env.DB_POOL_MAX) || 10,
+    min: Number(process.env.DB_POOL_MIN) || 2,
+  });
+}
+
 
 const TABLE = 'demo_table';
 const DEMO_ROW = { id: 1, message: 'Hello from PostgreSQL!' };
@@ -72,6 +81,7 @@ app.get('/', async (_req: Request, res: Response) => {
 
 app.listen(port, async () => {
   try {
+    await createPool();
     await initDb();
     // eslint-disable-next-line no-console
     console.log(`API server running on port ${port}`);

@@ -57,35 +57,34 @@ resource "azapi_resource" "apim_subnet" {
   ]
 }
 
-resource "azapi_resource" "container_apps_subnet" {
+resource "azapi_resource" "app_service_subnet" {
   type      = "Microsoft.Network/virtualNetworks/subnets@2023-04-01"
-  name      = "${local.abbrs.networkVirtualNetworksSubnets}containerapps-${random_id.random_deployment_suffix.hex}"
+  name      = "${local.abbrs.networkVirtualNetworksSubnets}appservice-${random_id.random_deployment_suffix.hex}"
   parent_id = data.azurerm_virtual_network.vnet.id
 
   body = {
     properties = {
 
       # List of address prefixes in subnet
-      addressPrefixes = ["${var.container_apps_subnet_prefix}"]
+      addressPrefixes = ["${var.app_service_subnet_prefix}"]
 
       # Service delegations
       delegations = [
         {
-          name = "containerapps_delegation"
+          name = "app_service_delegation"
           properties = {
-            serviceName = "Microsoft.App/environments"
-            #actions     = ["Microsoft.Network/virtualNetworks/subnets/action"]
+            serviceName = "Microsoft.Web/serverFarms"
           }
         }
       ]
 
       # Attach to NSG
       networkSecurityGroup = {
-        id = azurerm_network_security_group.containerapps_nsg.id
+        id = azurerm_network_security_group.app_service_nsg.id
       }
     }
   }
-  depends_on = [ azurerm_network_security_group.containerapps_nsg ]
+  depends_on = [ azurerm_network_security_group.app_service_nsg ]
   locks = [
     data.azurerm_virtual_network.vnet.id
   ]
@@ -144,15 +143,15 @@ resource "azurerm_network_security_group" "apim_nsg" {
   }
 }
 
-resource "azurerm_network_security_group" "containerapps_nsg" {
-  # This NSG is used for the Container Apps subnet
-  name                = "${local.abbrs.networkNetworkSecurityGroups}containerapps-${random_id.random_deployment_suffix.hex}"
+resource "azurerm_network_security_group" "app_service_nsg" {
+  # This NSG is used for the App Service subnet
+  name                = "${local.abbrs.networkNetworkSecurityGroups}appservice-${random_id.random_deployment_suffix.hex}"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
   
   # Dynamic security rules from locals
   dynamic "security_rule" {
-    for_each = local.containerapps_nsg_security_rules
+    for_each = local.app_service_nsg_security_rules
     content {
       name                         = security_rule.value.name
       priority                     = security_rule.value.priority

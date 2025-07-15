@@ -26,7 +26,7 @@ variable "apim_subnet_prefix" {
   description = "The address prefix for the API Management subnet."
 }
 
-variable "container_apps_subnet_prefix" {
+variable "app_service_subnet_prefix" {
   type        = string
   default     = "10.46.8.64/26"
   description = "The address prefix for the Container Apps subnet."
@@ -80,22 +80,22 @@ variable "container_app_ingress_transport" {
   }
 }
 
-variable "container_app_image" {
+variable "container_image_name" {
   type        = string
   description = "Container image for the Container App."
 }
 
-variable "container_app_registry_server" {
+variable "container_registry_url" {
   type        = string
   description = "Name of the Container Registry Server for the Container App."
 }
 
-variable "container_app_registry_username" {
+variable "container_registry_username" {
   type        = string
   description = "Username for the Container Registry."
 }
 
-variable "container_app_registry_password" {
+variable "container_registry_password" {
   type        = string
   description = "Password for the Container Registry."
   sensitive   = true
