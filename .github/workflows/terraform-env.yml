@@ -115,7 +115,7 @@ jobs:
             -var="apim_subnet_prefix=${{ vars.APIM_SUBNET_PREFIX }}" \
             -var="app_service_subnet_prefix=${{ vars.APP_SERVICE_SUBNET_PREFIX }}" \
             -var="privateendpoint_subnet_prefix=${{ vars.PRIVATEENDPOINT_SUBNET_PREFIX }}" \
-            -var="container_image_name=${{ github.repository_owner }}/${{ github.event.repository.name }}:latest" \
+            -var="container_image_name=${{ github.repository_owner }}/nr-ai-form:latest" \
             -var="container_registry_url=https://ghcr.io" \
             -var="container_registry_username=${{ github.event.repository.name }}" \
             -var="container_registry_password=${{ secrets.GHCR_TOKEN }}"

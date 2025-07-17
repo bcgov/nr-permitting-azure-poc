@@ -54,7 +54,7 @@ Add the following secrets and variables to your environment (as output by the se
 - `APP_SERVICE_SUBNET_PREFIX` – CIDR for App Service subnet (e.g., `10.46.8.64/26`)
 - `PRIVATEENDPOINT_SUBNET_PREFIX` – CIDR for Private Endpoint subnet (e.g., `10.46.8.128/26`)
 - `RESOURCE_GROUP_NAME` – Name of the Azure Resource Group to host the Azure Resources (e.g., `a9cee3-test-networking`)
-- `TF_STATE_STORAGE_ACCOUNT` – Name of the storage account for Terraform state
+- `TFSTATE_STORAGE_ACCOUNT` – Name of the storage account for Terraform state
 - `VNET_NAME` – Name of the Azure vNet
 ---
 
