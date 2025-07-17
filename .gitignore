@@ -97,3 +97,19 @@ local.settings.json
 __blobstorage__
 __queuestorage__
 __azurite_db*__.json
+
+# Terraform files
+*.tfstate
+*.tfstate.backup
+*.tfvars.backup
+.terraform/
+.terraform.lock.hcl
+terraform.tfplan
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Azure CLI
+.azure/

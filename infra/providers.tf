@@ -1,9 +1,9 @@
 terraform {
-  required_version = ">=1.0"
+  required_version = ">= 1.9.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "4.23.0"
+      version = "4.35.0"
     }
     azapi = {
       source = "Azure/azapi"
@@ -17,6 +17,6 @@ terraform {
 }
 provider "azurerm" {
   features {}
-  storage_use_azuread = true
-  subscription_id = "<subscrition_id>"
+  # subscription_id will be read from ARM_SUBSCRIPTION_ID environment variable
+  # This is automatically set by the GitHub Actions workflow
 }
