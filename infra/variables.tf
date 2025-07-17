@@ -8,7 +8,6 @@ variable "resource_group_location" {
 
 variable "resource_group_name" {
   type        = string
-  default     = "b9cee3-test-networking"
   description = "Name of the resource group."
 }
 
@@ -16,68 +15,22 @@ variable "resource_group_name" {
 
 variable "vnet_name" {
   type        = string
-  default     = "b9cee3-test-vwan-spoke"
   description = "Existing vnet name."
 }
 
 variable "apim_subnet_prefix" {
   type        = string
-  default     = "10.46.8.0/26"
   description = "The address prefix for the API Management subnet."
 }
 
 variable "app_service_subnet_prefix" {
   type        = string
-  default     = "10.46.8.64/26"
   description = "The address prefix for the Container Apps subnet."
 }
 
 variable "privateendpoint_subnet_prefix" {
   type        = string
-  default     = "10.46.8.128/26"
   description = "The address prefix for the Private Endpoint subnet."
-}
-
-// Container App Environment variables
-
-variable "container_app_environment_zone_redundancy" {
-  type        = bool
-  default     = false
-  description = "Enable zone redundancy for the Container App environment."
-}
-
-// Container Apps variables
-
-variable "container_app_revision_mode" {
-  type        = string
-  default     = "Single"
-  description = "Revision mode for the Container App environment."
-  validation {
-    condition     = contains(["Single", "Multiple"], var.container_app_revision_mode)
-    error_message = "The revision_mode must be either 'Single' or 'Multiple'."
-  }
-}
-
-variable "container_app_ingress_target_port" {
-  type        = number
-  default     = 3000
-  description = "Target port for the Container App ingress."
-}
-
-variable "container_app_ingress_external_enabled" {
-  type        = bool
-  default     = true
-  description = "Enable external ingress for the Container App."
-}
-
-variable "container_app_ingress_transport" {
-  type        = string
-  default     = "auto"
-  description = "Transport protocol for the Container App ingress."
-  validation {
-    condition     = contains(["auto", "http", "https"], var.container_app_ingress_transport)
-    error_message = "The ingress transport must be one of the following: auto, http, https."
-  }
 }
 
 variable "container_image_name" {
@@ -99,6 +52,18 @@ variable "container_registry_password" {
   type        = string
   description = "Password for the Container Registry."
   sensitive   = true
+}
+
+// App Service variables
+
+variable "app_service_plan_sku" {
+  description = "The SKU of the App Service Plan"
+  default     = "B1"
+  type        = string
+  validation {
+    condition     = contains(["B1", "S1", "P1v2"], var.app_service_plan_sku)
+    error_message = "The app_service_plan_sku must be one of the following: B1, S1, P1v2."
+  }
 }
 
 // API Management variables

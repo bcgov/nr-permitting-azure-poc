@@ -1,5 +1,6 @@
 {
     "analysisServicesServers": "as",
+    "aiServices": "ai-",
     "apiManagementService": "apim-",
     "appConfigurationConfigurationStores": "appcs-",
     "appContainerApps": "ca-",
@@ -38,6 +39,7 @@
     "devicesProvisioningServices": "provs-",
     "devicesProvisioningServicesCertificates": "pcert-",
     "documentDBDatabaseAccounts": "cosmos-",
+    "documentDBDatabaseCollection": "cosmoscol-",
     "eventGridDomains": "evgd-",
     "eventGridDomainsTopics": "evgt-",
     "eventGridEventSubscriptions": "evgs-",
@@ -73,6 +75,7 @@
     "networkFirewallPoliciesRuleGroups": "wafrg",
     "networkFirewallPoliciesWebApplication": "waf",
     "networkFrontDoors": "fd-",
+    "networkFrontdoorEndpoint": "fdep-",
     "networkFrontdoorWebApplicationFirewallPolicies": "fdfp-",
     "networkLoadBalancersExternal": "lbe-",
     "networkLoadBalancersInboundNatRules": "rule-",
