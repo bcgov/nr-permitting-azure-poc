@@ -42,8 +42,6 @@ Options:
     -n, --identity-name         Managed identity name (required)
     -r, --github-repo           GitHub repository in format owner/repo (required)
     -e, --environment           GitHub environment name (required)
-    --contributor-scope         Scope for Contributor role assignment (optional, defaults to resource group)
-    --additional-roles          Additional roles to assign (comma-separated, optional)
     --storage-account           Storage account name for Terraform state (optional, default: auto-generated)
     --storage-container         Storage container name for Terraform state (optional, default: tfstate)
     --create-storage            Create storage account for Terraform state (flag)
@@ -70,8 +68,6 @@ EOF
 
 # Default values
 GITHUB_ENVIRONMENT=""
-CONTRIBUTOR_SCOPE=""
-ADDITIONAL_ROLES=""
 STORAGE_ACCOUNT="" # Will be generated based on repo name
 STORAGE_CONTAINER="tfstate"
 CREATE_STORAGE=false
@@ -94,14 +90,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         -e|--environment)
             GITHUB_ENVIRONMENT="$2"
-            shift 2
-            ;;
-        --contributor-scope)
-            CONTRIBUTOR_SCOPE="$2"
-            shift 2
-            ;;
-        --additional-roles)
-            ADDITIONAL_ROLES="$2"
             shift 2
             ;;
         --storage-account)
@@ -272,35 +260,6 @@ get_identity_details() {
     fi
 }
 
-# Function to assign roles to managed identity
-assign_roles() {
-    log_info "Assigning roles to managed identity..."
-    
-    # Set default contributor scope if not provided
-    if [[ -z "$CONTRIBUTOR_SCOPE" ]]; then
-        if [[ "$DRY_RUN" == "false" ]]; then
-            CONTRIBUTOR_SCOPE="/subscriptions/$(az account show --query "id" --output tsv)/resourceGroups/$RESOURCE_GROUP"
-        else
-            CONTRIBUTOR_SCOPE="[DRY-RUN-RESOURCE-GROUP-SCOPE]"
-        fi
-    fi
-    
-    # Assign Contributor role
-    execute_command "az role assignment create --assignee '$CLIENT_ID' --role 'Contributor' --scope '$CONTRIBUTOR_SCOPE'" \
-        "Assigning Contributor role to managed identity"
-    
-    # Assign additional roles if specified
-    if [[ -n "$ADDITIONAL_ROLES" ]]; then
-        IFS=',' read -ra ROLES <<< "$ADDITIONAL_ROLES"
-        for role in "${ROLES[@]}"; do
-            role=$(echo "$role" | xargs) # Trim whitespace
-            execute_command "az role assignment create --assignee '$CLIENT_ID' --role '$role' --scope '$CONTRIBUTOR_SCOPE'" \
-                "Assigning '$role' role to managed identity"
-        done
-    fi
-    
-    log_success "Role assignments completed"
-}
 
 # Function to create federated identity credentials
 create_federated_credentials() {
@@ -537,13 +496,11 @@ main() {
     create_managed_identity
     get_identity_details
 
-    # Add a short delay to allow Azure to propagate the new identity before assigning roles
+    # Add a short delay to allow Azure to propagate the new identity if needed
     if [[ "$DRY_RUN" == "false" ]]; then
         log_info "Waiting 10 seconds for managed identity propagation..."
         sleep 10
     fi
-
-    assign_roles
     create_terraform_storage
     assign_storage_roles
     create_federated_credentials
