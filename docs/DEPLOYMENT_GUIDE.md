@@ -30,8 +30,17 @@ This script will:
 - Output values needed for GitHub secrets and environment variables
 
 ---
+## 2. Add Managed Identity to Project Entra Contributor Group
 
-## 2. Create GitHub Environment
+After running the setup script, a project lead must manually add the newly created Azure User-Assigned Managed Identity to the Entra group that assigns the Contributor role for this project. This step is required to ensure the GitHub Actions workflow has sufficient permissions to deploy resources.
+
+**Manual action required:**
+- Identify the managed identity name from the setup script output
+- In the Entra admin portal, add this managed identity to the appropriate group that grants Contributor access
+- Confirm the group assignment is complete before proceeding
+
+---
+## 3. Create GitHub Environment
 
 In your GitHub repository:
 1. Go to **Settings > Environments**
@@ -40,7 +49,7 @@ In your GitHub repository:
 
 ---
 
-## 3. Add GitHub Secrets and Variables
+## 4. Add GitHub Secrets and Variables
 
 Add the following secrets and variables to your environment (as output by the setup script):
 
@@ -58,7 +67,7 @@ Add the following secrets and variables to your environment (as output by the se
 - `VNET_NAME` – Name of the Azure vNet
 ---
 
-## 4. Deploy Infrastructure with GitHub Actions
+## 5. Deploy Infrastructure with GitHub Actions
 
 Once secrets and variables are set, push changes to your repository. The GitHub Actions workflow will:
 - Authenticate to Azure using OIDC
@@ -69,7 +78,7 @@ Monitor workflow runs under the **Actions** tab in your repository.
 
 ---
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 - Ensure all secrets and variables are correctly set
 - Check workflow logs for errors

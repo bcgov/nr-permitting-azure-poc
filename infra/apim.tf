@@ -64,3 +64,33 @@ resource "azurerm_api_management_api" "nr-permitting-azure-poc" {
     content_value  = file("./../src/docs/openapi.yaml")
   }
 }
+
+resource "azurerm_api_management_api_diagnostic" "nr-permitting-azure-poc" {
+  identifier             = "applicationinsights"
+  api_management_name    = azurerm_api_management.apim.name
+  resource_group_name    = data.azurerm_resource_group.rg.name
+  api_name               = azurerm_api_management_api.nr-permitting-azure-poc.name
+  api_management_logger_id = azurerm_api_management_logger.apim_logger.id
+
+  sampling_percentage    = 100
+
+  frontend_request {
+    body_bytes = 512
+    headers_to_log = ["*"]
+  }
+
+  frontend_response {
+    body_bytes = 512
+    headers_to_log = ["*"]
+  }
+
+  backend_request {
+    body_bytes = 512
+    headers_to_log = ["*"]
+  }
+
+  backend_response {
+    body_bytes = 512
+    headers_to_log = ["*"]
+  }
+}
